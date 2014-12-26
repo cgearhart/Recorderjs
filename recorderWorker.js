@@ -36,8 +36,8 @@ function record(inputBuffer){
 function exportWAV(type){
   var bufferL = mergeBuffers(recBuffersL, recLength);
   var bufferR = mergeBuffers(recBuffersR, recLength);
-  var interleaved = interleave(bufferL, bufferR);
-  var dataview = encodeWAV(interleaved);
+  var data = mix(bufferL, bufferR);
+  var dataview = encodeWAV(data);
   var audioBlob = new Blob([dataview], { type: type });
 
   this.postMessage(audioBlob);
@@ -66,18 +66,17 @@ function mergeBuffers(recBuffers, recLength){
   return result;
 }
 
-function interleave(inputL, inputR){
-  var length = inputL.length + inputR.length;
+function mix(inputL, inputR){
+  if (inputL.length != inputR.length){
+    // raise problem
+  }
+  var length = inputL.length;
   var result = new Float32Array(length);
 
-  var index = 0,
-    inputIndex = 0;
-
-  while (index < length){
-    result[index++] = inputL[inputIndex];
-    result[index++] = inputR[inputIndex];
-    inputIndex++;
+  for (var i = 0; i < length; i++){
+    result[i] = 0.5 * inputL[i] + 0.5 * inputR[i];
   }
+
   return result;
 }
 
@@ -111,13 +110,13 @@ function encodeWAV(samples){
   /* sample format (raw) */
   view.setUint16(20, 1, true);
   /* channel count */
-  view.setUint16(22, 2, true);
+  view.setUint16(22, 1, true);
   /* sample rate */
   view.setUint32(24, sampleRate, true);
   /* byte rate (sample rate * block align) */
-  view.setUint32(28, sampleRate * 4, true);
+  view.setUint32(28, sampleRate * 2, true);
   /* block align (channel count * bytes per sample) */
-  view.setUint16(32, 4, true);
+  view.setUint16(32, 2, true);
   /* bits per sample */
   view.setUint16(34, 16, true);
   /* data chunk identifier */
